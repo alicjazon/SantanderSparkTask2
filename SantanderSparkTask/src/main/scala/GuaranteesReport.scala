@@ -26,12 +26,10 @@ class GuaranteesReport(spark: SparkSession, scheduledDate: String) {
       .join(inputsMap("receiversRegistry"), inputsMap("receiversRegistry").col("RECEIVER_NAME") === inputsMap("transactions").col("RECEIVER_NAME"), "left_semi")
       .join(inputsMap("exchangeRatesRegistry"), col("CURRENCY") === col("FROM_CURRENCY"))
       .withColumn("GUARANTORS", explode(col("GUARANTORS")))
-      .withColumn("RATE", regexp_replace(col("RATE"), ",", ".").cast(DecimalType(3, 3)))
+      .withColumn("RATE", regexp_replace(col("RATE"), ",", ".").cast(DecimalType(4, 3)))
       .select(col("GUARANTORS.NAME"), col("GUARANTORS.PERCENTAGE"), col("TYPE"), col("COUNTRY"), col("RATE"), col("AMOUNT"), col("PARTITION_DATE"))
 
-    val finaldf = calculateGuaranteesAmountPerType(joinedDf)
-    finaldf.show
-    finaldf
+   calculateGuaranteesAmountPerType(joinedDf)
   }
 
   def write(inputDf: DataFrame, mode: SaveMode = Append): Unit = inputDf
@@ -59,8 +57,8 @@ class GuaranteesReport(spark: SparkSession, scheduledDate: String) {
     .withColumn("AVG_CLASS_B", calculateAverageAmountPerCountry("CLASS_B"))
     .withColumn("AVG_CLASS_C", calculateAverageAmountPerCountry("CLASS_C"))
     .withColumn("AVG_CLASS_D", calculateAverageAmountPerCountry("CLASS_D"))
-   // .drop("RATE")
+    .drop("RATE")
 
   private def calculateAverageAmountPerCountry(typeName: String) =
-    avg(typeName).over(Window.partitionBy("COUNTRY")) * col("RATE")
+    round(avg(typeName).over(Window.partitionBy("COUNTRY")) * col("RATE"), 3)
 }
