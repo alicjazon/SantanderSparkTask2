@@ -1,6 +1,7 @@
 Repository contains working example of a task for Santander recrutation.
 
 Task was tested based on provided example although it cannot be considered as finished.
+Generated report can be found under data/reports path. 
 
 Prerequisites:
 
